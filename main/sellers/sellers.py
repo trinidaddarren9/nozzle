@@ -33,6 +33,15 @@ parser.add_argument('order', type=str, required=False, choices=(
     'asc', 'dsc'), help='Order must be one of: asc, dsc', default='asc')
 
 
+def validation_errors_as_dict(errors):
+    error_dict = {}
+    for error in errors:
+        error_dict["field"] = error['loc'][0]
+        error_dict["message"] = error['msg']
+        error_dict["type"] = error['type']
+    return error_dict
+
+
 @ns_sellers.route("/<int:year>/top")
 class TopSeller(Resource):
     def get(self, year: int):
@@ -41,7 +50,7 @@ class TopSeller(Resource):
         try:
             YearValidator(year=year)
         except ValidationError as error:
-            return error.json(), 403
+            return validation_errors_as_dict(error.errors()), 403
 
         # query data
         query_result = db.session.query(
@@ -84,7 +93,7 @@ class TopSellerAllYears(Resource):
                 order=order
             )
         except ValidationError as error:
-            return error.json(), 403
+            return validation_errors_as_dict(error.errors()), 403
 
         # query data
         query_results = db.session.query(
