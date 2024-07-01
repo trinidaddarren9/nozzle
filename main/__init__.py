@@ -1,21 +1,21 @@
-from flask import Flask
-from flask_restx import Api
-from flask_sqlalchemy import SQLAlchemy
-from main.sellers import ns_sellers
+import os
 
-db = SQLAlchemy()
+from flask import Flask
+from main.models import db
+basedir = os.path.abspath(os.path.dirname(__file__))
 
 
 def create_app():
     app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///data.db'
-
-    # API
-    api = Api(app)
-    api.add_namespace(ns_sellers)
-
-    # db
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + \
+        os.path.join(basedir, 'data.db')
     db.init_app(app)
+
+    with app.app_context():
+        db.create_all()
+
+        from main.sellers import bp_seller
+        app.register_blueprint(bp_seller)
 
     return app
 
