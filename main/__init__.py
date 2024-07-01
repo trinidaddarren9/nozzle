@@ -14,8 +14,7 @@ def create_app(database_uri: str = 'sqlite:///' +
     db.init_app(app)
 
     with app.app_context():
-        # create tables if not exist
-        db.create_all()
+ 
         app.register_blueprint(bp_seller)
 
     return app
