@@ -15,7 +15,7 @@ from urllib.parse import urlencode
         # order
         ("sales_rep","dasc","order"),
         ("year","ascd","order"),
-        ("total_sales","desc","order"),
+        ("total_sales","desca","order"),
     ]
 )
 def test_incorrect_params(client,input_cat,input_ord,expected_key):
