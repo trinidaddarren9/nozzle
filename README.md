@@ -1,3 +1,4 @@
+
 ## Tech Stack
 
  1. Python 3.11
@@ -15,10 +16,9 @@
 	- Windows :  `venv\Scripts\activate`
 	- Linux:  `source venv/bin/activate`
 4. Install requirements via `pip install -r requirements.txt`
-5. To run:
-	-	test
-		- make sure to copy data.db file inside main folder
-		- run test `pytest`
+5. Copy data.db file to main folder
+6. To run:
+	-	test : `pytest`
 	-	app : `python app.py`
 
 ## GCP Secret Manager
