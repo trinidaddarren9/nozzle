@@ -1,0 +1,21 @@
+# Ignore Python bytecode files
+*.pyc
+__pycache__
+
+# Ignore editor-specific files
+.vscode/
+.idea/
+
+# Ignore virtual environment
+venv/
+env/
+*.venv/
+
+# Ignore local development files
+*.log
+
+# Ignore testing and documentation files
+*.md
+*.txt
+docs/
+tests/
