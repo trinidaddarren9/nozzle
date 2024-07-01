@@ -16,6 +16,5 @@ env/
 
 # Ignore testing and documentation files
 *.md
-*.txt
 docs/
 tests/
