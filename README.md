@@ -16,7 +16,9 @@
 	- Linux:  `source venv/bin/activate`
 4. Install requirements via `pip install -r requirements.txt`
 5. To run:
-	-	test : `pytest`
+	-	test
+		- make sure to copy data.db file inside main folder
+		- run test `pytest`
 	-	app : `python app.py`
 
 ## GCP Secret Manager
