@@ -1,6 +1,8 @@
 import pandas as pd
-from pydantic import BaseModel, field_validator, ValidationError
-from flask_restx import Namespace, Resource
+from pydantic import BaseModel, field_validator, ValidationError, Field
+from typing import Literal
+
+from flask_restx import Namespace, Resource, reqparse
 from main.models import Employee, Customer, Invoice
 
 from main import db
@@ -18,6 +20,19 @@ class YearValidator(BaseModel):
             raise ValueError("year must be in range of 1900 - 2999")
 
 
+class TopSellerAllYearsValidator(BaseModel):
+    category: Literal['sales_rep', 'total_sales', 'year']
+    order: Literal['asc', 'dsc']
+
+
+parser = reqparse.RequestParser()
+parser.add_argument('category', type=str, required=False, choices=('sales_rep', 'total_sales',
+                    'year'), help='Category must be one of: sales_rep, total_sales, year', default='sales_rep')
+
+parser.add_argument('order', type=str, required=False, choices=(
+    'asc', 'dsc'), help='Order must be one of: asc, dsc', default='asc')
+
+
 @ns_sellers.route("/<int:year>/top")
 class TopSeller(Resource):
     def get(self, year: int):
@@ -28,6 +43,7 @@ class TopSeller(Resource):
         except ValidationError as error:
             return error.json(), 403
 
+        # query data
         query_result = db.session.query(
             Employee,
             db.func.sum(Invoice.Total).label("total_sales")
@@ -53,8 +69,24 @@ class TopSeller(Resource):
 
 @ns_sellers.route("/top")
 class TopSellerAllYears(Resource):
+    @ns_sellers.expect(parser)
     def get(self):
 
+        # parse args
+        args = parser.parse_args()
+        category = args['category']
+        order = args['order']
+
+        # validate input
+        try:
+            TopSellerAllYearsValidator(
+                category=category,
+                order=order
+            )
+        except ValidationError as error:
+            return error.json(), 403
+
+        # query data
         query_results = db.session.query(
             Employee,
             db.func.sum(Invoice.Total).label("total_sales"),
@@ -66,7 +98,8 @@ class TopSellerAllYears(Resource):
             .order_by(db.func.sum(Invoice.Total).desc()) \
             .all()
 
-        if query_results is None:
+        # check if there is no data
+        if len(query_results) == 0:
             return {
                 "status": "error",
                 "message": "No data found."
@@ -79,6 +112,17 @@ class TopSellerAllYears(Resource):
         } for query_result in query_results]
 
         df = pd.DataFrame(data).groupby(["Year", "Sales Rep"]).max()
+
         # get the index of max sales per year
         idx = df.groupby('Year')['Total Sales'].idxmax()
-        return df.loc[idx].reset_index()[["Sales Rep", "Total Sales", "Year"]].to_dict(orient="records")
+
+        index = {
+            "sales_rep": "Sales Rep",
+            "total_sales": "Total Sales",
+            "year": "Year"
+        }
+
+        # arrange columns and sort values base on query params
+        result = df.loc[idx].reset_index()[["Sales Rep", "Total Sales", "Year"]].sort_values(
+            by=index[category], ascending=True if order == "asc" else False)
+        return result.to_dict(orient="records")
