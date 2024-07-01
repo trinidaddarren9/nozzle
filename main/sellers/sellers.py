@@ -1,3 +1,4 @@
+import pandas as pd
 from pydantic import BaseModel, field_validator, ValidationError
 from flask_restx import Namespace, Resource
 from main.models import Employee, Customer, Invoice
@@ -24,17 +25,17 @@ class TopSeller(Resource):
         # validate year input
         try:
             YearValidator(year=year)
-        except Exception as error:
+        except ValidationError as error:
             return error.json(), 403
 
         query_result = db.session.query(
             Employee,
             db.func.sum(Invoice.Total).label("total_sales")
         ) \
-            .join(Customer, Employee.EmployeeId == Customer.SupportRepId) \
-            .join(Invoice, Customer.SupportRepId == Invoice.CustomerId) \
-            .filter(db.extract('year', Invoice.InvoiceDate) == year) \
+            .join(Customer, Employee.EmployeeId == Customer.SupportRepId,) \
+            .join(Invoice, Customer.CustomerId == Invoice.CustomerId,) \
             .group_by(Employee.EmployeeId) \
+            .filter(db.extract('year', Invoice.InvoiceDate) == year) \
             .order_by(db.func.sum(Invoice.Total).desc()) \
             .first()
 
@@ -48,3 +49,36 @@ class TopSeller(Resource):
             "Sales Rep": f'{query_result[0].__getattribute__("FirstName")} {query_result[0].__getattribute__("LastName") }',
             "Total Sales": float(query_result[1])
         }
+
+
+@ns_sellers.route("/top")
+class TopSellerAllYears(Resource):
+    def get(self):
+
+        query_results = db.session.query(
+            Employee,
+            db.func.sum(Invoice.Total).label("total_sales"),
+            db.extract('year', Invoice.InvoiceDate).label("year")
+        ) \
+            .join(Customer, Employee.EmployeeId == Customer.SupportRepId) \
+            .join(Invoice, Customer.CustomerId == Invoice.CustomerId) \
+            .group_by(Employee.EmployeeId, db.extract('year', Invoice.InvoiceDate)) \
+            .order_by(db.func.sum(Invoice.Total).desc()) \
+            .all()
+
+        if query_results is None:
+            return {
+                "status": "error",
+                "message": "No data found."
+            }, 400
+
+        data = [{
+            "Sales Rep": f'{query_result[0].__getattribute__("FirstName")} {query_result[0].__getattribute__("LastName") }',
+            "Total Sales": float(query_result[1]),
+            "Year": int(query_result[2]),
+        } for query_result in query_results]
+
+        df = pd.DataFrame(data).groupby(["Year", "Sales Rep"]).max()
+        # get the index of max sales per year
+        idx = df.groupby('Year')['Total Sales'].idxmax()
+        return df.loc[idx].reset_index()[["Sales Rep", "Total Sales", "Year"]].to_dict(orient="records")
