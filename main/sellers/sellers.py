@@ -22,7 +22,7 @@ class YearValidator(BaseModel):
 
 class TopSellerAllYearsValidator(BaseModel):
     category: Literal['sales_rep', 'total_sales', 'year']
-    order: Literal['asc', 'dsc']
+    order: Literal['asc', 'desc']
 
 
 parser = reqparse.RequestParser()
@@ -30,7 +30,7 @@ parser.add_argument('category', type=str, required=False, choices=('sales_rep', 
                     'year'), help='Category must be one of: sales_rep, total_sales, year', default='sales_rep')
 
 parser.add_argument('order', type=str, required=False, choices=(
-    'asc', 'dsc'), help='Order must be one of: asc, dsc', default='asc')
+    'asc', 'desc'), help='Order must be one of: asc, dsc', default='asc')
 
 
 def validation_errors_as_dict(errors):
