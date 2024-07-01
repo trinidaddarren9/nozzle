@@ -1,4 +1,6 @@
-from main import app, db
+from flask_sqlalchemy import SQLAlchemy
+
+db = SQLAlchemy()
 
 
 class Album(db.Model):
@@ -152,8 +154,3 @@ class Track(db.Model):
         'Genre', primaryjoin='Track.GenreId == Genre.GenreId', backref='tracks')
     MediaType = db.relationship(
         'MediaType', primaryjoin='Track.MediaTypeId == MediaType.MediaTypeId', backref='tracks')
-
-
-# create db if not exists
-with app.app_context():
-    db.create_all()
